@@ -50,11 +50,12 @@ namespace ImageGallery.API.Controllers
         [HttpGet("{id}", Name = "GetImage")]
         public async Task<ActionResult<Image>> GetImage(Guid id)
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            if (ownerId == null)
-            {
-                throw new Exception("User indentifier is missing from token.");
-            }
+            // Use dditional claims for this 
+            //var ownerId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            //if (ownerId == null)
+            //{
+            //    throw new Exception("User indentifier is missing from token.");
+            //}
             var imageFromRepo = await _galleryRepository.GetImageAsync(id);
 
             if (imageFromRepo == null)
@@ -68,6 +69,7 @@ namespace ImageGallery.API.Controllers
         }
 
         [HttpPost()]
+        [Authorize(Roles = "PayingUser")]
         public async Task<ActionResult<Image>> CreateImage([FromBody] ImageForCreation imageForCreation)
         {
             // Automapper maps only the Title in our configuration
@@ -95,6 +97,13 @@ namespace ImageGallery.API.Controllers
             // ownerId should be set - can't save image in starter solution, will
             // be fixed during the course
             //imageEntity.OwnerId = ...;
+
+            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (ownerId == null)
+            {
+                throw new Exception("User identifier is missing from token.");
+            }
+            imageEntity.OwnerId = ownerId;
 
             // add and save.  
             _galleryRepository.AddImage(imageEntity);
